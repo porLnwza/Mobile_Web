@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <!-- กำหนดการเข้ารหัสเป็น UTF-8 เพื่อรองรับภาษาไทย -->
+    <meta charset="UTF-8">
+    <!-- ตั้งค่า viewport สำหรับแสดงผลบนมือถือ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ร้านมือถือ Dekkapo</title>
+    
+    <!-- เชื่อมโยงไฟล์ CSS ของ Bootstrap สำหรับใช้งานส่วนประกอบต่างๆ -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    
+    <!-- เชื่อมโยงไอคอนจาก FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* กำหนดพื้นหลังให้เป็นสีขาว */
+        body { background-color: #ffffff; }
+
+        /* ปรับรูปทรงของการ์ดให้มุมมน */
+        .card-custom { border-radius: 15px; }
+
+        /* สไตล์สำหรับปุ่มค้นหา */
+        .btn-custom-search { 
+            background-color: #96f6f9; 
+            color: rgb(0, 0, 0); 
+            border: none;    
+            padding: 0.375rem 0.75rem; 
+            border-radius: 4px; 
+            transition: background-color 0.3s;
+        }
+        
+        /* เมื่อเอาเมาส์ไปวางบนปุ่มค้นหา */
+        .btn-custom-search:hover { background-color: #0000002f; }
+    </style>
+</head>
+<body>
+
+<form action="{{ url_for('home') }}" method="POST">
+    <!-- Navbar (แถบเมนูนำทาง) -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-primary shadow-sm mb-4">
+        <div class="container-fluid">
+            <!-- ชื่อร้านบนแถบเมนู -->
+            <a class="navbar-brand" href="#">📱ร้านมือถือ Dekkapo</a>
+            
+            <!-- ปุ่มสำหรับยุบ/ขยายเมนู -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <!-- ลิงก์เมนูต่างๆ เช่น หน้า Home, ข้อมูลลูกค้า, Stock, Sale ฯลฯ -->
+                    <li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="customer_name">Name Customer</a></li>
+                    <li class="nav-item"><a class="nav-link" href="mobile_version">Mobile version</a></li>
+                    <li class="nav-item"><a class="nav-link" href="stock">Stock</a></li>
+                    <li class="nav-item"><a class="nav-link" href="stockgrp">Stockgrp</a></li>
+                    <li class="nav-item"><a class="nav-link" href="sale">Sale</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ส่วนของเนื้อหาหลัก -->
+    <div class="container mt-5">
+        <div class="text-center mb-4">
+            <!-- หัวข้อข้อมูลลูกค้า -->
+            <h3 class="fw-normal text-dark border-bottom pb-2 d-inline-block">ข้อมูลลูกค้า</h3>
+        </div>
+
+        <style>
+            /* สไตล์การ์ดที่แสดงตารางข้อมูล */
+            .card-custom {
+                width: 100%; /* ทำให้การ์ดมีขนาดเต็มหน้าจอ */
+                padding: 0px;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                margin: auto;
+                overflow-x: auto; /* เพิ่มแถบเลื่อนเมื่อข้อมูลเกินขนาด */
+            }
+
+            /* สไตล์ตารางภายในการ์ด */
+            .table {
+                width: 100%; /* ขยายตารางให้เต็มขนาดการ์ด */
+                table-layout: auto;
+                border-collapse: collapse;
+            }
+
+            /* สไตล์สำหรับเซลล์ในตาราง */
+            th, td {
+                padding: 10px;
+                text-align: left;
+                white-space: nowrap; /* ป้องกันไม่ให้ข้อความแยกบรรทัด */
+                border: 1px solid #ddd;
+            }
+        </style>
+
+        <!-- การ์ดที่แสดงข้อมูลลูกค้า -->
+        <div class="card-custom">
+            <!-- ตารางแสดงข้อมูลลูกค้า -->
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <!-- หัวข้อคอลัมน์ของตารางสามารถใส่ที่นี่ -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- เช็คว่ามีข้อมูลลูกค้าหรือไม่ -->
+                    {% if customer_text %}
+                        <!-- ลูปแสดงข้อมูลลูกค้าในแต่ละแถว -->
+                        {% for row in customer_text %}
+                            <tr>
+                                <!-- ลูปแสดงข้อมูลภายในแต่ละเซลล์ของแถว -->
+                                {% for data in row %}
+                                    <td>{{ data }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</form>
+
+<!-- เชื่อมโยงไฟล์ JavaScript ของ Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
