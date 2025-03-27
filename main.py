@@ -15,6 +15,16 @@ product = []
 # ฟังก์ชันหลักที่แสดงหน้าแรก
 @app.route('/', methods=['GET', 'POST'])
 def home():
+    selected_customer = None
+    selected_phone = None
+    customer_group = None  
+    select_stock = None  
+
+    select_value = request.form.get('customer')
+    selected_phone = request.form.get('selected_phone')
+    customer_group = request.form.get('customer_group')
+    select_stock = request.form .get('select_stock')
+
     if request.method == 'POST':
         if 'button_add' in request.form:
             customer_name = request.form.get('customer')
@@ -35,7 +45,7 @@ def home():
                     url = "https://notify-api.line.me/api/notify"
                     headers = {
                         'Content-Type': 'application/x-www-form-urlencoded',
-                        "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+                        "Authorization": "Bearer 7lVpHVzPrquKZ3M4aucCt7SBuXj5tMfw8oWuQSqQTWx"
                     }
                     message_text = (
                         f"\nชื่อลูกค้า👤: {customer_name}\n"
@@ -63,13 +73,25 @@ def home():
     data_Customer_grp = result_customergroup if result_customergroup else []
     data_stock = result_stock if result_stock else []
 
+    if select_value:
+            for row in data_Customer:
+                if row[0] == select_value:
+                    selected_customer = row[0]  
+                    selected_phone = row[5]  
+                    customer_group = row[1]  
+                    select_stock = row[4]  
+                break
     # ส่งข้อมูลทั้งหมดไปยังเทมเพลต 'home/home.html'
     return render_template(
     "home/home.html",
     data_Customer=data_Customer,
     data_Customer_grp=data_Customer_grp,
     data_stock=data_stock,
-    all_orders=all_orders,  # <-- This is passed
+    all_orders=all_orders,
+    selected_customer=selected_customer,
+    selected_phone=selected_phone,
+    customer_group=customer_group,
+    select_stock=select_stock,  # <-- This is passed
     product=product
 )
 
