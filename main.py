@@ -20,10 +20,26 @@ def home():
     customer_group = None  
     select_stock = None  
 
+    # ✅ ดึงข้อมูลจากฐานข้อมูลทุกครั้งที่โหลดหน้า
+    data_Customer = execute_data("SELECT * FROM tbCustomer") or []
+    data_Customer_grp = execute_data("SELECT * FROM tbCustomerGrp") or []
+    data_stock = execute_data("SELECT * FROM tbStock") or []
+    all_orders = get_all_orders() or []
+
     select_value = request.form.get('customer')
     selected_phone = request.form.get('selected_phone')
     customer_group = request.form.get('customer_group')
-    select_stock = request.form .get('select_stock')
+    select_stock = request.form.get('select_stock')
+
+    if select_value:
+        for row in data_Customer:
+            if row[0] == select_value:
+                selected_customer = row[0]  
+                customer_real_name = row[3]  # สมมติว่าชื่อจริงอยู่ในคอลัมน์ที่ 2
+                selected_phone = row[5]  
+                customer_group = row[1]  
+                select_stock = row[4]  
+                break
 
     if request.method == 'POST':
         if 'button_add' in request.form:
@@ -34,90 +50,91 @@ def home():
             quantity = request.form.get('quantity')
             phone = request.form.get('selected_phone')
 
+
+
+            customer_real_name = ""
+            for row in data_Customer:
+                if row[0] == customer_name:
+                    customer_real_name = row[3]  # สมมติว่า column ที่ 2 คือชื่อจริง
+                    break
+
             if not all([customer_name, model, network, customer_group, quantity, phone]):
                 flash('กรุณากรอกข้อมูลให้ครบถ้วน', 'error')
                 return redirect(url_for('home'))
-            else:
-                if add_order_to_database(customer_name, model, network, customer_group, quantity, phone):
-                    flash('เพิ่มข้อมูลการสั่งซื้อสำเร็จ', 'success')
 
-                    # ส่งข้อความผ่าน Line Notify
-                    url = "https://notify-api.line.me/api/notify"
-                    headers = {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        "Authorization": "Bearer 7lVpHVzPrquKZ3M4aucCt7SBuXj5tMfw8oWuQSqQTWx"
-                    }
-                    message_text = (f"ร้านมือถือ Dekkapo （￣︶￣）↗📱\n"
-                        f"\nชื่อลูกค้า👤: {customer_name}\n"
-                        f"สินค้าที่สั่ง🛒: {model}\n"
-                        f"เครือข่าย🌏: {network}\n"
-                        f"ประเภทลูกค้า🫂: {customer_group}\n"
-                        f"จำนวน📱: {quantity}\n"
-                        f"เบอร์โทร🤙: {phone}"
-                    )
-                    message = {"message": message_text}
-                    requests.post(url, headers=headers, data=message)
+            add_order_to_database(customer_real_name, model, network, customer_group, quantity, phone)
+            flash('เพิ่มข้อมูลการสั่งซื้อสำเร็จ', 'success')
 
-                    return redirect(url_for('home'))
-                else:
-                    flash('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error')
+            # ✅ ส่งข้อความผ่าน Line Notify
+            url = "https://notify-api.line.me/api/notify"
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                "Authorization": "Bearer 7lVpHVzPrquKZ3M4aucCt7SBuXj5tMfw8oWuQSqQTWx"
+            }
+            message_text = (f"ร้านมือถือ Dekkapo （￣︶￣）↗📱\n"
+                f"ชื่อลูกค้า👤: {customer_real_name}\n"
+                f"สินค้าที่สั่ง🛒: {model}\n"
+                f"เครือข่าย🌏: {network}\n"
+                f"ประเภทลูกค้า🫂: {customer_group}\n"
+                f"จำนวน📱🛒: {quantity}\n"
+                f"เบอร์โทร🤙: {phone}"
+            )
+            message = {"message": message_text}
+            requests.post(url, headers=headers, data=message)
 
-    all_orders = get_all_orders() # ดึงข้อมูลทั้งหมดจากตารางการสั่งซื้อ
-    product = get_all_orders()  # ตัวอย่างการใช้ฟังก์ชันเพื่อดึงข้อมูลจากฐานข้อมูล
+            return redirect(url_for('home'))
+        else:
+            flash('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error')
 
-    result_customer = execute_data("SELECT * FROM tbCustomer")
-    result_customergroup = execute_data("SELECT * FROM tbCustomerGrp")
-    result_stock = execute_data("SELECT * FROM tbStock")
-
-    data_Customer = result_customer if result_customer else []
-    data_Customer_grp = result_customergroup if result_customergroup else []
-    data_stock = result_stock if result_stock else []
-
-    if select_value:
-            for row in data_Customer:
-                if row[0] == select_value:
-                    selected_customer = row[0]  
-                    selected_phone = row[5]  
-                    customer_group = row[1]  
-                    select_stock = row[4]  
-                break
-    # ส่งข้อมูลทั้งหมดไปยังเทมเพลต 'home/home.html'
     return render_template(
-    "home/home.html",
-    data_Customer=data_Customer,
-    data_Customer_grp=data_Customer_grp,
-    data_stock=data_stock,
-    all_orders=all_orders,
-    selected_customer=selected_customer,
-    selected_phone=selected_phone,
-    customer_group=customer_group,
-    select_stock=select_stock,  # <-- This is passed
-    product=product
-)
+        "home/home.html",
+        data_Customer=data_Customer,
+        data_Customer_grp=data_Customer_grp,
+        data_stock=data_stock,
+        selected_customer=selected_customer,    
+        selected_phone=selected_phone,
+        customer_group=customer_group,
+        select_stock=select_stock,
+        all_orders=all_orders
+    )
 
 # ฟังก์ชันสำหรับการแก้ไขข้อมูล
 @app.route('/edit_product', methods=['POST'])
 def edit_product():
+    # รับ product_id จากฟอร์ม
     product_id = request.form.get('product_id')
+    
     if not product_id or not product_id.isdigit():
         flash('ข้อมูล product_id ไม่ถูกต้อง', 'error')
         return redirect(url_for('home'))
 
-    # ดึงข้อมูลที่แก้ไข
-    customer_name = request.form.get('edit_customerName')
+    # ดึงข้อมูลที่แก้ไขจากฟอร์ม
+    customer_id = request.form.get('edit_customerName')  # รหัสลูกค้า
     model = request.form.get('edit_model')
     network = request.form.get('edit_network')
     customer_group = request.form.get('edit_customerGroup')
     quantity = request.form.get('edit_quantity')
     phone = request.form.get('edit_phone')
 
-    # อัปเดตข้อมูล
-    if update_order(product_id, customer_name, model, network, customer_group, quantity, phone):
+    # ค้นหาชื่อจริงของลูกค้าจากฐานข้อมูล
+    query = "SELECT CustomerName FROM tbCustomer WHERE CustomerID = ?"
+    customer_data = execute_data(query, (customer_id,))
+
+    if customer_data and len(customer_data) > 0:
+        customer_real_name = customer_data[0][0]  # ดึงชื่อจริงของลูกค้า
+    else:
+        flash('ไม่พบข้อมูลลูกค้า', 'error')
+        return redirect(url_for('home'))
+
+    # อัปเดตข้อมูลการสั่งซื้อในฐานข้อมูล
+    if update_order(product_id, customer_real_name, model, network, customer_group, quantity, phone):
         flash('ข้อมูลถูกอัปเดตสำเร็จ', 'success')
     else:
         flash('เกิดข้อผิดพลาดในการอัปเดตข้อมูล', 'error')
 
     return redirect(url_for('home'))
+
+
 
 # ฟังก์ชันสำหรับการลบข้อมูล
 @app.route('/cancel_product', methods=['POST'])
@@ -129,7 +146,7 @@ def cancel_product():
 
     product_id = int(product_id)
     if update_order_status(product_id, 'canceled'):
-        flash('สินค้าถูกยกเลิกแล้ว', 'success')  
+        flash('สินค้าถูกยกเลิกแล้ว', 'success')
     else:
         flash('เกิดข้อผิดพลาดในการยกเลิกสินค้า', 'error')
 
