@@ -84,26 +84,26 @@ def add_order_to_database(customer_name, model, network, customer_group, quantit
     return False
 
 # ฟังก์ชันสำหรับแก้ไขข้อมูลการสั่งซื้อ
-def update_order(order_id, customer_name, model, network, customer_group, quantity, phone):
-    conn = connection_database()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE tbOrderMobileSale
-                SET OrderName = ?, OrderMobileName = ?, OrderMobileGrp = ?, 
-                    OrderPeople = ?, OrderNameMobile = ?, Orderphone = ?
-                WHERE OrderID = ?
-            ''', (customer_name, model, network, customer_group, quantity, phone, order_id))
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            return True
-        except Exception as e:
-            print(f"Error updating order: {e}")
-            return False
-    return False
+def update_order(product_id, customer_name, model, network, customer_group, quantity, phone):
+    try:
+        conn = connection_database()
+        cursor = conn.cursor()
+        
+        # คำสั่ง SQL สำหรับการอัปเดตข้อมูล
+        cursor.execute("""
+            UPDATE tbOrderMobileSale
+            SET OrderName = ?, OrderMobileName = ?, OrderMobileGrp = ?, OrderPeople = ?, OrderPhone = ?
+            WHERE OrderID = ?
+        """, (customer_name, model, network, customer_group, phone, product_id))
+
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
 
 # ฟังก์ชันสำหรับลบข้อมูลการสั่งซื้อ
 def delete_order(order_id):
