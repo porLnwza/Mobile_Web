@@ -47,7 +47,7 @@ def home():
                         'Content-Type': 'application/x-www-form-urlencoded',
                         "Authorization": "Bearer 7lVpHVzPrquKZ3M4aucCt7SBuXj5tMfw8oWuQSqQTWx"
                     }
-                    message_text = (
+                    message_text = (f"ร้านมือถือ Dekkapo （￣︶￣）↗📱\n"
                         f"\nชื่อลูกค้า👤: {customer_name}\n"
                         f"สินค้าที่สั่ง🛒: {model}\n"
                         f"เครือข่าย🌏: {network}\n"
