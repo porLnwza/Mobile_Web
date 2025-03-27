@@ -55,11 +55,11 @@
             <h2>รายการลูกค้า</h2>
             <!-- Dropdown เลือกชื่อลูกค้า -->
             <select name="customer" class="form-select mb-3">
-                <option>---ชื่อลูกค้า---</option>
+                <option value="">-- เลือกลูกค้า --</option>
                 {% for row in data_Customer %}
-                    <option value="{{ row[0] }}" {% if selected_customer == row[0] %} selected {% endif %}>
-                        {{ row[2] }} {{ row[3] }}
-                    </option>
+                <option value="{{ row[0] }}" {% if selected_customer == row[0] %} selected {% endif %}>
+                    {{ row[3] if row[2] else 'ไม่พบชื่อลูกค้า' }}
+                </option>
                 {% endfor %}
             </select>
 
@@ -144,6 +144,7 @@
                             <th>ประเภทลูกค้า</th>
                             <th>จำนวน</th>
                             <th>เบอร์โทรศัพท์</th>
+                            <th>สำหรับแก้ไขและยกเลิกสินค้า</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -155,86 +156,86 @@
                             <td>{{ order.customerGroup }}</td>
                             <td>{{ order.quantity }}</td>
                             <td>{{ order.phone }}</td>
+                            <td>
+                                <!-- ปุ่มแก้ไขสินค้า -->
+                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal{{ order.id }}">
+                                    <i class="fas fa-edit"></i> แก้ไข📎
+                                </button>
+
+                                <!-- Modal สำหรับแก้ไขข้อมูล -->
+                                <div class="modal fade" id="editModal{{ order.id }}" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="{{ url_for('edit_product') }}" method="POST">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="editModalLabel">แก้ไขข้อมูลสินค้า</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="product_id" value="{{ order.id }}">
+
+                                                    <!-- Dropdown สำหรับเลือกชื่อลูกค้า -->
+                                                    <div class="mb-3">
+                                                        <label for="edit_customerName" class="form-label">ชื่อลูกค้า</label>
+                                                        <select name="edit_customerName" class="form-select" required>
+                                                            {% for row in data_Customer %}
+                                                                <option value="{{ row[0] }}" {% if selected_customer == row[0] %} selected {% endif %}>
+                                                                    {{ row[3] if row[2] else 'ไม่พบชื่อลูกค้า' }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Dropdown สำหรับเลือกรุ่นสินค้า -->
+                                                    <div class="mb-3">
+                                                        <label for="edit_model" class="form-label">รุ่นสินค้า</label>
+                                                        <select name="edit_model" class="form-select" required>
+                                                            {% for row in data_stock[:14] %}
+                                                                <option value="{{ row[4] }}" {% if select_stock == row[4] %} selected {% endif %}>
+                                                                    {{ row[4] }}
+                                                                </option>
+                                                            {% endfor %}
+                                                        </select>   
+                                                    </div>
+
+                                                    <!-- Dropdown สำหรับเลือกเครือข่าย -->
+                                                    <div class="mb-3">
+                                                        <label for="edit_network" class="form-label">เครือข่าย</label>
+                                                        <select name="edit_network" class="form-select" required>
+                                                            <option value="DTAC" {% if order.network == 'DTAC' %} selected {% endif %}>DTAC</option>
+                                                            <option value="AIS" {% if order.network == 'AIS' %} selected {% endif %}>AIS</option>
+                                                            <option value="True" {% if order.network == 'True' %} selected {% endif %}>True</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- ช่องป้อนจำนวนสินค้า -->
+                                                    <div class="mb-3">
+                                                        <label for="edit_quantity" class="form-label">จำนวน</label>
+                                                        <input type="number" class="form-control" name="edit_quantity" value="{{ order.quantity }}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                                                    <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form action="{{ url_for('cancel_product') }}" method="POST" style="display:inline-block;">
+                                    <input type="hidden" name="product_id" value="{{ order.id }}">
+                                    <button class="btn btn-warning btn-sm" type="submit" name="button_cancel" id="cancelButton">
+                                        <i class="fas fa-ban"></i> ยกเลิกสินค้า
+                                    </button>
+                                </form> 
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
                             <td colspan="6">ไม่พบข้อมูลการสั่งซื้อ</td>
                         </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
-                                    <!-- ปุ่มแก้ไขสินค้า -->
-                                    <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal{{ order.id }}">
-                                        <i class="fas fa-edit"></i> แก้ไข📎
-                                    </button>
-                                    
-                                    <!-- Modal สำหรับแก้ไขข้อมูล -->
-                                    <div class="modal fade" id="editModal{{ order.id }}" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <form action="{{ url_for('edit_product') }}" method="POST">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title" id="editModalLabel">แก้ไขข้อมูลสินค้า</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <!-- ฟอร์มแก้ไขข้อมูล -->
-                                                        <input type="hidden" name="product_id" value="{{ order.id }}">
-                                    
-                                                        <!-- กรอกข้อมูลแก้ไข -->
-                                                        <div class="mb-3">
-                                                            <label for="edit_customerName" class="form-label">ชื่อลูกค้า</label>
-                                                            <select name="edit_customerName" class="form-select">
-                                                                {% for row in data_Customer %}
-                                                                    <option value="{{ row[0] }}" {% if row[0] == order.customerName %} selected {% endif %}>
-                                                                        {{ row[2] }} {{ row[3] }}
-                                                                    </option>
-                                                                {% endfor %}
-                                                            </select>
-                                                        </div>
-                                    
-                                                        <div class="mb-3">
-                                                            <label for="edit_model" class="form-label">รุ่นสินค้า</label>
-                                                            <input type="text" class="form-control" name="edit_model" value="{{ order.model }}">
-                                                        </div>
-                                    
-                                                        <div class="mb-3">
-                                                            <label for="edit_network" class="form-label">เครือข่าย</label>
-                                                            <input type="text" class="form-control" name="edit_network" value="{{ order.network }}">
-                                                        </div>
-                                    
-                                                        <div class="mb-3">
-                                                            <label for="edit_customerGroup" class="form-label">ประเภทลูกค้า</label>
-                                                            <select name="edit_customerGroup" class="form-select">
-                                                                {% for row in data_Customer_grp %}
-                                                                    <option value="{{ row[1] }}" {% if row[1] == order.customerGroup %} selected {% endif %}>
-                                                                        {{ row[1] }}
-                                                                    </option>
-                                                                {% endfor %}
-                                                            </select>
-                                                        </div>
-                                    
-                                                        <div class="mb-3">
-                                                            <label for="edit_quantity" class="form-label">จำนวน</label>
-                                                            <input type="number" class="form-control" name="edit_quantity" value="{{ order.quantity }}">
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
-                                                        <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <form action="{{ url_for('cancel_product') }}" method="POST" style="display:inline-block;">
-                                        <input type="hidden" name="product_id" value="{{ order.id }}">
-                                        <button class="btn btn-warning btn-sm" type="submit" name="button_cancel" id="cancelButton">
-                                            <i class="fas fa-ban"></i> ยกเลิกสินค้า
-                                        </button>
-                                    </form>
-                                    
+                    </tbody>                                    
                                     <script>
                                         // คำยืนยันการยกเลิกสินค้า
                                         document.getElementById("cancelButton").onclick = function(event) {
