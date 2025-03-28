@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect ,url_for,request,flash
-from connection import connection_database, execute_data ,add_order_to_database, get_all_orders, update_order, delete_order,get_customer_data
+from connection import connection_database, execute_data ,add_order_to_database, get_all_orders, update_order,get_customer_data,cancel_order
 import pyodbc
 import requests
 
@@ -108,7 +108,7 @@ def home():
             url = "https://notify-api.line.me/api/notify"
             headers = {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                "Authorization": "Bearer 7lVpHVzPrquKZ3M4aucCt7SBuXj5tMfw8oWuQSqQTWx"
+                "Authorization": "Bearer DxjRgaf2lch2M1LwOFysWq3aLuHoKtVIaDyvOT56jbN"
             }
             message_text = (f"ร้านมือถือ Dekkapo （￣︶￣）↗📱\n"
                 f"ชื่อลูกค้า👤: {customer_real_name}\n"
@@ -177,15 +177,15 @@ def edit_product():
         url = "https://notify-api.line.me/api/notify"
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
-            "Authorization": "Bearer 7lVpHVzPrquKZ3M4aucCt7SBuXj5tMfw8oWuQSqQTWx"
+            "Authorization": "Bearer DxjRgaf2lch2M1LwOFysWq3aLuHoKtVIaDyvOT56jbN"
         }
         message_text = (f"ร้านมือถือ Dekkapo （￣︶￣）↗📱\n"
-                        f"แก้ไขข้อมูลลูกค้า🛠️ : ( •̀ ω •́ )✧\n"
+                        f"แก้ไขข้อมูลลูกค้าคนใหม่🛠️ : ( •̀ ω •́ )✧\n"
                         f"\nชื่อลูกค้า👤: {customer_real_name}\n"
                         f"สินค้าที่แก้ไข🛒: {model}\n"
                         f"เครือข่าย🌏: {network}\n"
                         f"ประเภทลูกค้า🫂: {customer_group}\n"
-                        f"จำนวน📱🛒: {quantity}\n"
+                        f"จำนวน📱🛒: {quantity} เครื่อง\n"
                         f"เบอร์โทร🤙: {phone}"
         )
         message = {"message": message_text}
@@ -198,34 +198,18 @@ def edit_product():
 
 
 
-
 @app.route('/cancel_product', methods=['POST'])
 def cancel_product():
-    product_name = request.form['product_name']
+    # รับค่า OrderID จากฟอร์ม
+    order_id = request.form.get('order_id')
     
-    try:
-        # เชื่อมต่อกับฐานข้อมูล
-        conn = pyodbc.connect("DRIVER={SQL Server};SERVER=GBSUPGRADE20220;DATABASE=istockcoop;Trusted_Connection=yes")
-        cursor = conn.cursor()
-
-        # คำสั่ง SQL สำหรับลบข้อมูลที่ตรงกับ OrderName
-        sql = "DELETE FROM tbOrderMobileSale WHERE OrderName = ?"
-        cursor.execute(sql, (product_name,))
-        
-        if cursor.rowcount > 0:
-            conn.commit()
-            flash(f"ยกเลิกสินค้าชื่อ {product_name} เรียบร้อยแล้ว", 'success')
-        else:
-            flash(f"ไม่พบสินค้าชื่อ {product_name} ในระบบ", 'danger')
-
-    except Exception as e:  
-        conn.rollback()
-        flash(f"เกิดข้อผิดพลาด: {str(e)}", 'danger')
-
-    finally:
-        conn.close()
-
-    return redirect(url_for('home'))
+    # เรียกใช้ฟังก์ชัน cancel_order เพื่ออัปเดตสถานะเป็น "ยกเลิก"
+    if cancel_order(order_id):
+        flash('ยกเลิกสินค้าเรียบร้อยแล้ว', 'success')
+    else:
+        flash('เกิดข้อผิดพลาดในการยกเลิกสินค้า', 'danger')
+    
+    return redirect(url_for('home'))  # กลับไปยังหน้า home
 
 # หน้าแสดงข้อมูลลูกค้า
 @app.route('/customer_name')
