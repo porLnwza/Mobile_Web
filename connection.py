@@ -1,7 +1,6 @@
 import pyodbc
 
 # ฟังก์ชันสำหรับเชื่อมต่อกับฐานข้อมูล
-# ฟังก์ชันสำหรับเชื่อมต่อกับฐานข้อมูล
 def connection_database():
     try:
         conn = pyodbc.connect(
@@ -19,142 +18,125 @@ def connection_database():
 def execute_data(query):
     try:
         with connection_database() as conn:
-            cursor = conn.cursor()
-            cursor.execute(query)
-            rows = cursor.fetchall()
-            cursor.close()
-            return rows
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                rows = cursor.fetchall()
+                return rows
     except Exception as e:
         print(f"Query execution failed: {e}")
         return None
-    
 
-
+# ฟังก์ชันดึงข้อมูลการสั่งซื้อทั้งหมด
 def get_all_orders():
     conn = connection_database()
     if conn:
         try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM tbOrderMobileSale")  # ตรวจสอบ SQL Query ว่าถูกต้อง
-            rows = cursor.fetchall()
-            
-            # ใช้ cursor.description เพื่อดึงชื่อคอลัมน์
-            columns = [column[0] for column in cursor.description]
-            orders = []
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM tbOrderMobileSale")  # ตรวจสอบ SQL Query ว่าถูกต้อง
+                rows = cursor.fetchall()
 
-            for row in rows:
-                order = dict(zip(columns, row))  # สร้าง dictionary จากชื่อคอลัมน์และข้อมูลใน row
-                orders.append({
-                    'customerName': order['OrderName'],
-                    'model': order['OrderMobileName'],
-                    'network': order['OrderMobileGrp'],
-                    'customerGroup': order['OrderPeople'],
-                    'quantity': order['OrderNameMobile'],
-                    'phone': order['Orderphone']
-                })
-            cursor.close()
-            conn.close()
-            return orders
+                columns = [column[0] for column in cursor.description]
+                orders = []
+
+                for row in rows:
+                    order = dict(zip(columns, row))
+                    orders.append({
+                        'customerName': order['OrderName'],
+                        'model': order['OrderMobileName'],
+                        'network': order['OrderMobileGrp'],
+                        'customerGroup': order['OrderPeople'],
+                        'quantity': order['OrderNameMobile'],  # ตรวจสอบว่า 'OrderNameMobile' คือจำนวนสินค้าใช่หรือไม่
+                        'phone': order['Orderphone']
+                    })
+                return orders
         except Exception as e:
             print(f"Error fetching data: {e}")
             return []
     return []
 
-
-# ฟังก์ชันเพิ่มคำสั่งซื้อและส่งข้อความผ่าน Line Notify
+# ฟังก์ชันสำหรับการเพิ่มคำสั่งซื้อ
 def add_order_to_database(customer_name, model, network, customer_group, quantity, phone):
     conn = connection_database()
     if conn:
         try:
-            cursor = conn.cursor()
-            cursor.execute(''' 
-                INSERT INTO tbOrderMobileSale 
-                (OrderName, OrderMobileName, OrderMobileGrp, OrderPeople, OrderNameMobile, Orderphone)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (customer_name, model, network, customer_group, quantity, phone))
+            with conn.cursor() as cursor:
+                cursor.execute(''' 
+                    INSERT INTO tbOrderMobileSale 
+                    (OrderName, OrderMobileName, OrderMobileGrp, OrderPeople, OrderNameMobile, Orderphone)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (customer_name, model, network, customer_group, quantity, phone))
 
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-            return True
+                conn.commit()
+                return True
         except Exception as e:
             print(f"Error adding order: {e}")
             return False
     return False
 
-# ฟังก์ชันสำหรับแก้ไขข้อมูลการสั่งซื้อ
-def update_order(product_id, customer_name, model, network, customer_group, quantity, phone):
-    try:
-        conn = connection_database()
-        cursor = conn.cursor()
-        
-        # คำสั่ง SQL สำหรับการอัปเดตข้อมูล
-        cursor.execute("""
-            UPDATE tbOrderMobileSale
-            SET OrderName = ?, OrderMobileName = ?, OrderMobileGrp = ?, OrderPeople = ?, OrderPhone = ?
-            WHERE OrderID = ?
-        """, (customer_name, model, network, customer_group, phone, product_id))
-
-        conn.commit()
-        return True
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
-    finally:
-        cursor.close()
-        conn.close()
+# ฟังก์ชันสำหรับการอัปเดตข้อมูลการสั่งซื้อ
+def update_order(order_name, model, network, customer_group, quantity, phone):
+    conn = connection_database()
+    if conn:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    UPDATE tbOrderMobileSale
+                    SET OrderName = ?, OrderMobileName = ?, OrderMobileGrp = ?, OrderPeople = ?, OrderNameMobile = ?, Orderphone = ?
+                    WHERE OrderName = ?
+                """, (order_name, model, network, customer_group, quantity, phone, order_name))  # แก้ไขตำแหน่งให้ถูกต้อง
+                conn.commit()
+                return True
+        except Exception as e:
+            print(f"Error updating order: {e}")
+            return False
+    return False
 
 # ฟังก์ชันสำหรับลบข้อมูลการสั่งซื้อ
 def delete_order(order_id):
     conn = connection_database()
     if conn:
         try:
-            cursor = conn.cursor()
-            cursor.execute('DELETE FROM tbOrderMobileSale WHERE OrderID = ?', (order_id,))
-            
-            conn.commit()
-            cursor.close()
-            conn.close()
-            return True
+            with conn.cursor() as cursor:
+                cursor.execute('DELETE FROM tbOrderMobileSale WHERE OrderID = ?', (order_id,))
+                conn.commit()
+                return True
         except Exception as e:
             print(f"Error deleting order: {e}")
             return False
     return False
 
-
-
-# ฟังก์ชันสำหรับการอัปเดตสถานะการสั่งซื้อ (เช่น การยกเลิก)
-def update_order_status(product_id, status):
+# ฟังก์ชันสำหรับการอัปเดตสถานะการสั่งซื้อ
+def update_order_status(order_id, status):
     conn = connection_database()
     if conn:
-        cursor = conn.cursor()
         try:
-            cursor.execute("UPDATE tbOrderMobileSale SET OrderStatus = ? WHERE OrderID = ?", (status, product_id))
-            conn.commit()
-            return True
+            with conn.cursor() as cursor:
+                cursor.execute("UPDATE tbOrderMobileSale SET OrderStatus = ? WHERE OrderID = ?", (status, order_id))
+                conn.commit()
+                return True
         except Exception as e:
             print(f"Error: {e}")
             return False
-        finally:
-            cursor.close()
-            conn.close()
     return False
 
+# ฟังก์ชันสำหรับการดึงข้อมูลลูกค้าจากฐานข้อมูล
+def get_customer_data():
+    try:
+        conn = connection_database()  # ใช้การเชื่อมต่อฐานข้อมูลจากฟังก์ชันที่คุณสร้างขึ้น
+        if conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM tbCustomer")  # หรือเปลี่ยนชื่อ table ให้เหมาะสม
+                rows = cursor.fetchall()
 
+                # ใช้ cursor.description เพื่อดึงชื่อคอลัมน์
+                columns = [column[0] for column in cursor.description]
+                customers = []
 
-# # ฟังก์ชันสำหรับการลบข้อมูลการสั่งซื้อ
-# @app.route('/cancel_product', methods=['POST'])
-# def cancel_product():
-#     product_id = request.form.get('product_id')
-#     if not product_id or not product_id.isdigit():
-#         flash('ข้อมูล product_id ไม่ถูกต้อง', 'error')
-#         return redirect(url_for('home'))
-
-#     product_id = int(product_id)
-#     if update_order_status(product_id, 'canceled'):
-#         flash('สินค้าถูกยกเลิกแล้ว', 'success')
-#     else:
-#         flash('เกิดข้อผิดพลาดในการยกเลิกสินค้า', 'error')
-
-#     return redirect(url_for('home'))
+                for row in rows:
+                    customer = dict(zip(columns, row))  # สร้าง dictionary จากชื่อคอลัมน์และข้อมูลใน row
+                    customers.append(customer)
+                
+                return customers  # ส่งกลับข้อมูลลูกค้าในรูปแบบ list ของ dictionary
+    except Exception as e:
+        print(f"Error fetching customer data: {e}")
+        return []
